@@ -27,7 +27,7 @@ jobs:
           docker save innervoice-app -o innervoice-app.tar
           chmod 644 innervoice-app.tar
 
-      - name: EC2로 이미지 전송 (SCP)
+      - name: EC2로 이미지 전송
         uses: appleboy/scp-action@v0.1.6
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -35,8 +35,11 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           source: "innervoice-app.tar"
           target: "/home/ec2-user"
+          overwrite: true                
+          tar_dereference: false         
+          rm: true       
 
-      - name: EC2에서 Docker 컨테이너 실행 (SSH)
+      - name: EC2에서 Docker 실행
         uses: appleboy/ssh-action@v0.1.6
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -46,6 +49,4 @@ jobs:
             docker stop innervoice-app || true
             docker rm innervoice-app || true
             docker load -i innervoice-app.tar
-            docker run -d --name innervoice-app \
-              -p 8080:8080 \
-              innervoice-app
+            docker run -d --name innervoice-app -p 8080:8080 innervoice-app
