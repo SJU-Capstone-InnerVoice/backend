@@ -27,8 +27,8 @@ jobs:
     - name: 🛠️ Grant execute permission to gradlew
       run: chmod +x ./gradlew
 
-    - name: 🧹 Clean and build (no tests)
-      run: ./gradlew clean build -x test
+    - name: 🧹 Build bootJar only (no tests)
+      run: ./gradlew clean bootJar -x test
 
     - name: 🧨 Remove old JAR on EC2
       uses: appleboy/ssh-action@v0.1.10
