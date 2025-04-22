@@ -46,6 +46,12 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             cd /home/ec2-user/backend
+
+            # ✅ JAVA_HOME 설정
+            echo 'export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64' >> ~/.bashrc
+            echo 'export PATH=$JAVA_HOME/bin:$PATH' >> ~/.bashrc
+            source ~/.bashrc
+            
             chmod +x ./gradlew
             ./gradlew clean build -x test
 
