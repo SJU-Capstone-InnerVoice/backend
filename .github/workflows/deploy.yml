@@ -23,7 +23,7 @@ jobs:
         run: docker build -t innervoice-app .
 
       - name: Docker 이미지 압축 (.tar)
-        run: docker save innervoice-app -o innervoice-app.tar
+        run: docker save innervoice-app -o ./innervoice-app.tar
 
       - name: EC2로 이미지 전송 (SCP)
         uses: appleboy/scp-action@v0.1.6
