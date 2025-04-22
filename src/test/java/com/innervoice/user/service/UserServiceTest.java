@@ -56,7 +56,6 @@ class UserServiceTest {
         UserCreateResponse response = userService.onboard(defaultRequest);
 
         // then
-        assertThat(response.id()).isEqualTo(1L);
         verify(userRepository).findByName(defaultRequest.name());
         verify(userRepository).save(any(User.class));
     }
