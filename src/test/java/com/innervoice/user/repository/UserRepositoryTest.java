@@ -23,7 +23,7 @@ class UserRepositoryTest {
 
     @Test
     @DisplayName("save() 호출 후 저장된 User 객체를 반환한다.")
-    void saveUserTest(){
+    void save_user_test(){
         //given
         User user = User.builder()
                 .name("user1")
@@ -42,14 +42,14 @@ class UserRepositoryTest {
 
     @Test
     @DisplayName("존재하지 않은 이름으로 findByName() 호출 시 Optional.empty()를 반환한다")
-    void findByNameNotFound(){
+    void find_by_name_not_found(){
         Optional<User> result = userRepository.findByName("unknown");
         assertThat(result).isEmpty();
     }
 
     @Test
     @DisplayName("여러 유저 저장 후 findAll() 조회하면 저장한 유저 수만큼 반환된다")
-    void saveMultipleAndFindAll(){
+    void save_multiple_and_find_all(){
         //given
         User user1 = User.builder()
                 .name("user1")
@@ -73,7 +73,7 @@ class UserRepositoryTest {
 
     @Test
     @DisplayName("delete() 호출 이후에는 해당 유저가 조회되지 않는다")
-    void deleteByIdTest(){
+    void delete_by_id_test(){
         //given
         User user = User.builder()
                 .name("user1")
@@ -92,7 +92,7 @@ class UserRepositoryTest {
 
     @Test
     @DisplayName("동일 이름으로 두 번째 저장 시 Unique 제약에 의해 예외가 발생한다")
-    void duplicateNameThrowsException(){
+    void duplicate_name_throws_exception(){
         //given
         User user1 = User.builder()
                 .name("duplicateName")
