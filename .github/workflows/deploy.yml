@@ -1,4 +1,4 @@
-name: Deploy Spring Boot to EC2 (Git 방식)
+name: Deploy Spring Boot to EC2 
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: EC2에 SSH 접속하여 앱 배포
+      - name: 📡 EC2에 SSH로 접속하여 프로젝트 디렉토리 이동 및 코드 pull
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -18,24 +18,44 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script_stop: true
           script: |
-            echo "✅ EC2 접속 성공. 배포를 시작합니다..."
+            echo "✅ EC2 접속 성공"
 
-            # 1. 프로젝트 디렉토리로 이동
             cd /home/ec2-user/backend
-
-            # 2. Git 최신 코드 가져오기
             git pull origin main
 
-            # 3. 기존 애플리케이션 종료 (포트 8080 사용 중이면 kill)
+      - name: 🛑 실행 중인 애플리케이션 종료 (포트 8080)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
             PID=$(lsof -t -i:8080)
             if [ -n "$PID" ]; then
-              echo "🔁 기존 프로세스 종료 중: $PID"
+              echo "🔁 실행 중인 프로세스를 종료합니다 (PID: $PID)"
               kill -9 $PID
+            else
+              echo "🔍 실행 중인 프로세스가 없습니다"
             fi
 
-            # 4. 애플리케이션 빌드
+      - name: 🧹 gradlew 실행 권한 부여 + 애플리케이션 빌드
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /home/ec2-user/backend
+            chmod +x ./gradlew
             ./gradlew clean build -x test
 
-            # 5. 애플리케이션 실행 (백그라운드, docker profile 적용)
-            echo "🚀 애플리케이션 실행 중..."
+      - name: 🚀 애플리케이션 실행 (docker profile 적용)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /home/ec2-user/backend
+            echo "🚀 백그라운드로 애플리케이션을 실행합니다"
             nohup java -Dspring.profiles.active=docker -jar build/libs/*SNAPSHOT.jar > output.log 2>&1 &
