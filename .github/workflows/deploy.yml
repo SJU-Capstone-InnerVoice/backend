@@ -1,4 +1,4 @@
-name: Deploy Spring Boot to EC2 using Docker
+name: Deploy Spring Boot to EC2
 
 on:
   push:
@@ -10,40 +10,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: GitHub에서 소스코드 체크아웃
-        uses: actions/checkout@v3
-
-      - name: gradlew 실행 권한 부여
-        run: chmod +x ./gradlew
-
-      - name: JAR 파일 빌드
-        run: ./gradlew build -x test
-
-      - name: Docker 이미지 빌드
-        run: docker build -t innervoice-app .
-
-      - name: Docker 이미지 압축 (.tar)
-        run: docker save innervoice-app -o innervoice-app.tar
-
-      - name: EC2로 이미지 전송 (SCP)
-        uses: appleboy/scp-action@v0.1.6
+      - name: 📡 EC2에 SSH로 접속하여 프로젝트 디렉토리 이동 및 코드 pull
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          source: "innervoice-app.tar"
-          target: "/home/ec2-user"
+          script_stop: true
+          script: |
+            echo "✅ EC2 접속 성공"
+            cd /home/ec2-user/backend
+            git pull origin main
 
-      - name: EC2에서 Docker 컨테이너 실행 (SSH)
-        uses: appleboy/ssh-action@v0.1.6
+      - name: 🛑 실행 중인 애플리케이션 종료 (포트 8080)
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            docker stop innervoice-app || true
-            docker rm innervoice-app || true
-            docker load -i innervoice-app.tar
-            docker run -d --name innervoice-app \
-              -p 8080:8080 \
-              innervoice-app
+            PID=$(lsof -t -i:8080)
+            if [ -n "$PID" ]; then
+              echo "🔁 실행 중인 프로세스를 종료합니다 (PID: $PID)"
+              kill -9 $PID
+            else
+              echo "🔍 실행 중인 프로세스가 없습니다"
+            fi
+
+      - name: 🧹 JAVA_HOME + gradlew 권한 부여 및 빌드
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /home/ec2-user/backend
+
+            # ✅ JAVA_HOME + ORG_GRADLE_JAVA_HOME 설정
+            export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64
+            export PATH=$JAVA_HOME/bin:$PATH
+            export ORG_GRADLE_JAVA_HOME=$JAVA_HOME
+
+            # ✅ gradlew 권한 부여 및 빌드
+            chmod +x ./gradlew
+            ./gradlew clean build -x test
+
+      - name: 🚀 애플리케이션 실행 (docker profile 적용)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /home/ec2-user/backend
+            echo "🚀 백그라운드로 애플리케이션을 실행합니다"
+            nohup java -Dspring.profiles.active=docker -jar build/libs/*SNAPSHOT.jar > output.log 2>&1 &
