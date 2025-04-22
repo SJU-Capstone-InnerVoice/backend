@@ -1,4 +1,4 @@
-name: Deploy Spring Boot to EC2 
+name: Deploy Spring Boot to EC2
 
 on:
   push:
@@ -19,7 +19,6 @@ jobs:
           script_stop: true
           script: |
             echo "✅ EC2 접속 성공"
-
             cd /home/ec2-user/backend
             git pull origin main
 
@@ -38,7 +37,7 @@ jobs:
               echo "🔍 실행 중인 프로세스가 없습니다"
             fi
 
-      - name: 🧹 gradlew 실행 권한 부여 + 애플리케이션 빌드
+      - name: 🧹 JAVA_HOME + gradlew 권한 부여 및 빌드
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -47,11 +46,12 @@ jobs:
           script: |
             cd /home/ec2-user/backend
 
-            # ✅ JAVA_HOME 설정
-            echo 'export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64' >> ~/.bashrc
-            echo 'export PATH=$JAVA_HOME/bin:$PATH' >> ~/.bashrc
-            source ~/.bashrc
-            
+            # ✅ JAVA_HOME + ORG_GRADLE_JAVA_HOME 설정
+            export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64
+            export PATH=$JAVA_HOME/bin:$PATH
+            export ORG_GRADLE_JAVA_HOME=$JAVA_HOME
+
+            # ✅ gradlew 권한 부여 및 빌드
             chmod +x ./gradlew
             ./gradlew clean build -x test
 
