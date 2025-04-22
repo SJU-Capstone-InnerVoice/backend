@@ -1,0 +1,46 @@
+name: Deploy Spring Boot to EC2 using Docker
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: GitHub에서 소스코드 체크아웃
+        uses: actions/checkout@v3
+
+      - name: JAR 파일 빌드
+        run: ./gradlew build -x test
+
+      - name: Docker 이미지 빌드
+        run: docker build -t innervoice-app .
+
+      - name: Docker 이미지 압축 (.tar)
+        run: docker save innervoice-app -o innervoice-app.tar
+
+      - name: EC2로 이미지 전송 (SCP)
+        uses: appleboy/scp-action@v0.1.6
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          source: "innervoice-app.tar"
+          target: "/home/ec2-user"
+
+      - name: EC2에서 Docker 컨테이너 실행 (SSH)
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            docker stop innervoice-app || true
+            docker rm innervoice-app || true
+            docker load -i innervoice-app.tar
+            docker run -d --name innervoice-app \
+              -p 8080:8080 \
+              innervoice-app
