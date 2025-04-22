@@ -1,4 +1,4 @@
-name: Deploy Spring Boot to EC2 using Docker
+name: Deploy Spring Boot to EC2 (Git 방식)
 
 on:
   push:
@@ -10,43 +10,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: GitHub에서 소스코드 체크아웃
-        uses: actions/checkout@v3
-
-      - name: gradlew 실행 권한 부여
-        run: chmod +x ./gradlew
-
-      - name: JAR 파일 빌드
-        run: ./gradlew build -x test
-
-      - name: Docker 이미지 빌드
-        run: docker build -t innervoice-app .
-
-      - name: Docker 이미지 압축
-        run: |
-          docker save innervoice-app -o innervoice-app.tar
-          chmod 644 innervoice-app.tar
-
-      - name: EC2로 이미지 전송
-        uses: appleboy/scp-action@v0.1.6
+      - name: EC2에 SSH 접속하여 앱 배포
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          source: "innervoice-app.tar"
-          target: "/home/ec2-user"
-          overwrite: true                
-          tar_dereference: false         
-          rm: true       
-
-      - name: EC2에서 Docker 실행
-        uses: appleboy/ssh-action@v0.1.6
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
+          script_stop: true
           script: |
-            docker stop innervoice-app || true
-            docker rm innervoice-app || true
-            docker load -i innervoice-app.tar
-            docker run -d --name innervoice-app -p 8080:8080 innervoice-app
+            echo "✅ EC2 접속 성공. 배포를 시작합니다..."
+
+            # 1. 프로젝트 디렉토리로 이동
+            cd /home/ec2-user/innervoice
+
+            # 2. Git 최신 코드 가져오기
+            git pull origin main
+
+            # 3. 기존 애플리케이션 종료 (포트 8080 사용 중이면 kill)
+            PID=$(lsof -t -i:8080)
+            if [ -n "$PID" ]; then
+              echo "🔁 기존 프로세스 종료 중: $PID"
+              kill -9 $PID
+            fi
+
+            # 4. 애플리케이션 빌드
+            ./gradlew clean build -x test
+
+            # 5. 애플리케이션 실행 (백그라운드, docker profile 적용)
+            echo "🚀 애플리케이션 실행 중..."
+            nohup java -Dspring.profiles.active=docker -jar build/libs/*SNAPSHOT.jar > output.log 2>&1 &
