@@ -21,7 +21,7 @@ jobs:
             echo "✅ EC2 접속 성공. 배포를 시작합니다..."
 
             # 1. 프로젝트 디렉토리로 이동
-            cd /home/ec2-user/innervoice
+            cd /home/ec2-user/backend
 
             # 2. Git 최신 코드 가져오기
             git pull origin main
