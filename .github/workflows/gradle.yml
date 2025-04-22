@@ -1,4 +1,4 @@
-name: Java CI/CD with EC2 Deploy
+name: Java CI/CD with EC2 Git Pull Deploy
 
 on:
   push:
@@ -6,83 +6,42 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  git-pull-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: ✅ Checkout code (with full history)
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: ☕ Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-
-    - name: ⚙️ Setup Gradle
-      uses: gradle/actions/setup-gradle@v4
-
-    - name: 🛠️ Grant execute permission to gradlew
-      run: chmod +x ./gradlew
-
-    - name: 🧹 Build bootJar only (no tests)
-      run: ./gradlew clean bootJar -x test
-
-    - name: 🧨 Remove old JAR on EC2
+    - name: ✅ SSH into EC2, pull latest code, build, and restart app
       uses: appleboy/ssh-action@v0.1.10
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ec2-user
         key: ${{ secrets.EC2_KEY }}
         script: |
-          echo "Removing old JAR..."
-          rm -f ~/backend/build/libs/innervoice-0.0.1-SNAPSHOT.jar
+          echo "👉 [1] Move to backend project folder"
+          cd ~/backend
 
-    - name: 🚚 Copy JAR to EC2
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ec2-user
-        key: ${{ secrets.EC2_KEY }}
-        source: "build/libs/innervoice-0.0.1-SNAPSHOT.jar"
-        target: "/home/ec2-user/backend/build/libs/"
+          echo "🔄 [2] Git pull latest code"
+          git reset --hard HEAD
+          git pull origin main
 
-    - name: 🔫 Kill existing app on EC2 (port-based)
-      uses: appleboy/ssh-action@v0.1.10
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ec2-user
-        key: ${{ secrets.EC2_KEY }}
-        script: |
-          echo "Killing existing app (port 8080)..."
+          echo "🧹 [3] Kill existing app (port 8080)"
           pid=$(lsof -t -i:8080)
           if [ -n "$pid" ]; then
-            echo "Found process $pid. Killing..."
             kill -9 $pid
           else
-            echo "No process running on port 8080."
+            echo "No app running on port 8080."
           fi
 
-    - name: 🚀 Start new app on EC2
-      uses: appleboy/ssh-action@v0.1.10
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ec2-user
-        key: ${{ secrets.EC2_KEY }}
-        script: |
-          echo "Exporting env vars..."
-          export $(cat ~/backend/.env | xargs)
+          echo "⚙️ [4] Grant execute permission to gradlew"
+          chmod +x ./gradlew
 
-          echo "Starting app..."
-          nohup java -jar ~/backend/build/libs/innervoice-0.0.1-SNAPSHOT.jar \
-            --spring.profiles.active=dev > ~/backend/nohup.out 2>&1 &
+          echo "🛠️ [5] Build bootJar"
+          ./gradlew clean bootJar -x test
 
-    - name: 📄 Check app logs (last 30 lines)
-      uses: appleboy/ssh-action@v0.1.10
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ec2-user
-        key: ${{ secrets.EC2_KEY }}
-        script: tail -n 30 ~/backend/nohup.out
+          echo "🚀 [6] Start new Spring Boot app"
+          export $(cat .env | xargs)
+          nohup java -jar build/libs/innervoice-0.0.1-SNAPSHOT.jar \
+            --spring.profiles.active=dev > nohup.out 2>&1 &
+
+          echo "📄 [7] Check nohup output (last 30 lines)"
+          tail -n 30 nohup.out
