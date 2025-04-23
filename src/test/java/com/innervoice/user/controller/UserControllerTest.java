@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.innervoice.user.domain.Role;
 import com.innervoice.user.dto.request.UserCreateRequest;
+import com.innervoice.user.dto.request.UserLoginRequest;
 import com.innervoice.user.dto.response.UserCreateResponse;
+import com.innervoice.user.dto.response.UserLoginResponse;
 import com.innervoice.user.exception.UserException;
 import com.innervoice.user.exception.UserExceptionType;
 import com.innervoice.user.service.UserService;
@@ -44,7 +46,7 @@ class UserControllerTest {
         when(userService.onboard(any(UserCreateRequest.class))).thenReturn(response);
 
         // when & then
-        mockMvc.perform(post("/onboard")
+        mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -61,7 +63,7 @@ class UserControllerTest {
                 .thenThrow(new UserException(UserExceptionType.ALREADY_EXIST_NAME));
 
         // when & then
-        mockMvc.perform(post("/onboard")
+        mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
@@ -78,9 +80,58 @@ class UserControllerTest {
                 .put("role", "INVALID_ROLE");
 
         // when & then
-        mockMvc.perform(post("/onboard")
+        mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidReq)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("login 요청 성공 시 UserLoginResponse 반환")
+    void login_success() throws Exception {
+        // given
+        UserLoginRequest request = new UserLoginRequest("joon", "password1");
+        UserLoginResponse response = new UserLoginResponse(1L, "joon", "PARENT");
+        when(userService.login(any(UserLoginRequest.class)))
+                .thenReturn(response);
+
+        // when & then
+        mockMvc.perform(post("/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.name").value("joon"))
+                .andExpect(jsonPath("$.role").value("PARENT"));
+    }
+
+    @Test
+    @DisplayName("login 요청 시 존재하지 않는 사용자면 404 반환")
+    void login_user_not_found() throws Exception {
+        //given
+        UserLoginRequest request = new UserLoginRequest("unknown", "pw");
+        when(userService.login(any(UserLoginRequest.class)))
+                .thenThrow(new UserException(UserExceptionType.USER_NOT_FOUND));
+
+        //when & then
+        mockMvc.perform(post("/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("login 요청 시 비밀번호가 틀리면 401 반환")
+    void login_invalid_password() throws Exception {
+        // given
+        UserLoginRequest request = new UserLoginRequest("joon", "wrongpw");
+        when(userService.login(any(UserLoginRequest.class)))
+                .thenThrow(new UserException(UserExceptionType.INVALID_PASSWORD));
+
+        // when & then
+        mockMvc.perform(post("/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
     }
 }
