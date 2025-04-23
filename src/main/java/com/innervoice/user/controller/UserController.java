@@ -1,13 +1,15 @@
 package com.innervoice.user.controller;
 
 import com.innervoice.user.dto.request.UserCreateRequest;
+import com.innervoice.user.dto.request.UserLoginRequest;
 import com.innervoice.user.dto.response.UserCreateResponse;
+import com.innervoice.user.dto.response.UserLoginResponse;
 import com.innervoice.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/onboard")
+@RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -18,18 +20,13 @@ public class UserController {
         return userService.onboard(request);
     }
 
+    @PostMapping("/login")
+    public UserLoginResponse login(@RequestBody UserLoginRequest request){
+        return userService.login(request);
+    }
+
     @GetMapping("/test")
     public String test() {
         return "test";
-    }
-
-    @GetMapping("/test2")
-    public String test2() {
-        return "test2 success";
-    }
-
-    @GetMapping("/test3")
-    public String test3() {
-        return "test3 success";
     }
 }
