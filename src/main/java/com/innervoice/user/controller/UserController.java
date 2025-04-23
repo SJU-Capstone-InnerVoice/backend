@@ -27,4 +27,9 @@ public class UserController {
     public String test2() {
         return "test2 success";
     }
+
+    @GetMapping("/test3")
+    public String test3() {
+        return "test3 success";
+    }
 }
