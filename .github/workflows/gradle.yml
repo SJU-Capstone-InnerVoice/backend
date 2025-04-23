@@ -35,8 +35,8 @@ jobs:
           echo "⚙️ [4] Grant execute permission to gradlew"
           chmod +x ./gradlew
 
-          echo "🛠️ [5] Build bootJar"
-          ./gradlew clean bootJar
+          echo "🛠️ [5] Build project (including tests)"
+          ./gradlew clean build
 
           echo "🚀 [6] Start new Spring Boot app"
           export $(cat .env | xargs)
