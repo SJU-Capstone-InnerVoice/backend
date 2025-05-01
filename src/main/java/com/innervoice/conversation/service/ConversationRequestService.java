@@ -1,0 +1,52 @@
+package com.innervoice.conversation.service;
+
+import com.innervoice.conversation.domain.ConversationRequest;
+import com.innervoice.conversation.dto.request.CreateConversationRequest;
+import com.innervoice.conversation.dto.response.ConversationRequestResponse;
+import com.innervoice.conversation.repository.ConversationRequestRepository;
+import com.innervoice.user.domain.User;
+import com.innervoice.user.service.FindUserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class ConversationRequestService {
+
+    private final ConversationRequestRepository repository;
+    private final FindUserService findUserService;
+
+    public ConversationRequestResponse create(CreateConversationRequest request) {
+        User user = findUserService.findUserById(request.userId());
+        User receiver = findUserService.findUserById(request.receiverId());
+        ConversationRequest conversationRequest = ConversationRequest.builder()
+                .sender(user)
+                .receiver(receiver)
+                .characterImageId(request.characterImageId())
+                .build();
+        ConversationRequest savedRequest = repository.save(conversationRequest);
+        return ConversationRequestResponse.from(savedRequest);
+    }
+
+    public List<ConversationRequestResponse> getReceivedRequests(Long userId) {
+        User receiver = findUserService.findUserById(userId);
+        return repository.findAllByReceiverOrSender(userId)
+                .stream()
+                .map(ConversationRequestResponse::from)
+                .toList();
+    }
+
+    public void accept(Long requestId) {
+        ConversationRequest conversationRequest = repository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("요청이 존재하지 않습니다"));
+        conversationRequest.accept();
+    }
+
+    public void delete(Long requestId) {
+        repository.deleteById(requestId);
+    }
+}
