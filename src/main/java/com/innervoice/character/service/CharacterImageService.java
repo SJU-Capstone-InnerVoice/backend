@@ -18,6 +18,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class CharacterImageService {
 
     private final S3UploadService s3UploadService;
