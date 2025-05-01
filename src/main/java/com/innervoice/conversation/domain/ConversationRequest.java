@@ -25,14 +25,18 @@ public class ConversationRequest {
     @Column(name = "character_image_id", nullable = false)
     private Long characterImageId;
 
+    @Column(name = "room_id", nullable = false)
+    private Long roomId;
+
     @Column(name = "is_accepted", nullable = false)
     private boolean isAccepted;
 
     @Builder
-    public ConversationRequest(User sender, User receiver, Long characterImageId) {
+    public ConversationRequest(User sender, User receiver, Long characterImageId, Long roomId) {
         this.sender = sender;
         this.receiver = receiver;
         this.characterImageId = characterImageId;
+        this.roomId = roomId;
         this.isAccepted = false;
     }
 

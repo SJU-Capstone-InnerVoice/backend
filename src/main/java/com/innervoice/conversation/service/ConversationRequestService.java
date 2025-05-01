@@ -28,6 +28,7 @@ public class ConversationRequestService {
         ConversationRequest conversationRequest = ConversationRequest.builder()
                 .sender(user)
                 .receiver(receiver)
+                .roomId(request.roomId())
                 .characterImageId(request.characterImageId())
                 .build();
         ConversationRequest savedRequest = repository.save(conversationRequest);
