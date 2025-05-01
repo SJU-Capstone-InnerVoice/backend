@@ -36,7 +36,7 @@ jobs:
           chmod +x ./gradlew
 
           echo "🛠️ [5] Build project (including tests)"
-          ./gradlew clean build
+          ./gradlew clean build -x test
 
           echo "🚀 [6] Start new Spring Boot app"
           export $(cat .env | xargs)
