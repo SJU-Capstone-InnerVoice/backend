@@ -12,6 +12,9 @@ import com.innervoice.user.domain.User;
 import com.innervoice.user.service.FindUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -40,4 +43,11 @@ public class CharacterImageService {
         return CharacterImageResponse.from(characterImage);
     }
 
+    @Transactional(readOnly = true)
+    public List<CharacterImageResponse> listAllCharacterImagesForUser(Long userId) {
+        return characterImageRepository.findAllAvailableForUser(userId)
+                .stream()
+                .map(CharacterImageResponse::from)
+                .toList();
+    }
 }
