@@ -3,6 +3,8 @@ package com.innervoice.conversation.service;
 import com.innervoice.conversation.domain.ConversationRequest;
 import com.innervoice.conversation.dto.request.CreateConversationRequest;
 import com.innervoice.conversation.dto.response.ConversationRequestResponse;
+import com.innervoice.conversation.exception.ConversationException;
+import com.innervoice.conversation.exception.ConversationExceptionType;
 import com.innervoice.conversation.repository.ConversationRequestRepository;
 import com.innervoice.user.domain.User;
 import com.innervoice.user.service.FindUserService;
@@ -42,11 +44,13 @@ public class ConversationRequestService {
 
     public void accept(Long requestId) {
         ConversationRequest conversationRequest = repository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("요청이 존재하지 않습니다"));
+                .orElseThrow(() -> new ConversationException(ConversationExceptionType.CONVERSATION_REQUEST_NOT_FOUND));
         conversationRequest.accept();
     }
 
     public void delete(Long requestId) {
-        repository.deleteById(requestId);
+        ConversationRequest conversationRequest = repository.findById(requestId)
+                .orElseThrow(() -> new ConversationException(ConversationExceptionType.CONVERSATION_REQUEST_NOT_FOUND));
+        repository.delete(conversationRequest);
     }
 }
