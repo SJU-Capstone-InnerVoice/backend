@@ -6,6 +6,7 @@ public record ConversationRequestResponse(
         Long id,
         Long senderId,
         Long receiverId,
+        Long roomId,
         Long characterImageId,
         boolean isAccepted
 ) {
@@ -14,6 +15,7 @@ public record ConversationRequestResponse(
                 entity.getId(),
                 entity.getSender().getId(),
                 entity.getReceiver().getId(),
+                entity.getRoomId(),
                 entity.getCharacterImageId(),
                 entity.isAccepted()
         );
