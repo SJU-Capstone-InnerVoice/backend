@@ -37,7 +37,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
           source: "build/libs/innervoice-0.0.1-SNAPSHOT.jar"
-          target: "~/backend/"
+          target: "/home/ec2-user/backend/"
 
       - name: 🚀 SSH into EC2 and restart app
         if: github.event_name == 'push'
