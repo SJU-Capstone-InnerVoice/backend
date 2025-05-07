@@ -33,13 +33,12 @@ jobs:
         if: github.event_name == 'push'
         uses: appleboy/scp-action@v0.1.4
         with:
-          overwrite: true
-          strip_components: 2
+          overwrite: true      
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
           source: "build/libs/innervoice-0.0.1-SNAPSHOT.jar"
-          target: "/home/ec2-user/backend/"
+          target: "/home/ec2-user/backend/build/libs/"
 
       - name: 🚀 SSH into EC2 and restart app
         if: github.event_name == 'push'
