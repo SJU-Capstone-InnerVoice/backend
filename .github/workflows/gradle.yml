@@ -22,10 +22,13 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: 🔐 Grant execute permission to gradlew
+        run: chmod +x ./gradlew
+
       - name: 🛠️ Build with Gradle (with tests)
         run: ./gradlew clean build
 
-      # 👇 아래 두 단계는 PR일 때는 실행하지 않도록 조건 설정
+      # 이 단계부터는 "push"일 때만 실행됨
       - name: 📦 Copy JAR to EC2
         if: github.event_name == 'push'
         uses: appleboy/scp-action@v0.1.4
