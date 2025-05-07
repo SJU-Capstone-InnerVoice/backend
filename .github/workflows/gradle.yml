@@ -33,6 +33,7 @@ jobs:
         if: github.event_name == 'push'
         uses: appleboy/scp-action@v0.1.4
         with:
+          overwrite: true
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
