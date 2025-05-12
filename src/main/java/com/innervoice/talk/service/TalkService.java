@@ -20,6 +20,7 @@ public class TalkService {
     private final FindUserService findUserService;
     private final TalkRepository talkRepository;
 
+
     public TalkResponse createTalk(TalkCreateRequest request){
         User user = findUserService.findUserById(request.userId());
         Talk talk = Talk.builder()
